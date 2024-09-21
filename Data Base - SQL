@@ -1,0 +1,148 @@
+CREATE DATABASE CarRental
+
+CREATE TABLE Roles
+(
+	RoleID INT IDENTITY(1,1) PRIMARY KEY,
+	RoleName NVARCHAR(15) UNIQUE NOT NULL
+)
+
+CREATE TABLE Users 
+(
+	UserID UNIQUEIDENTIFIER PRIMARY KEY, 
+	UserName NVARCHAR(30) NOT NULL, 
+	IDNumber NVARCHAR(9) UNIQUE NOT NULL, 
+	Email NVARCHAR(50) NOT NULL, 
+	PhoneNumber NVARCHAR(20) NOT NULL, 
+	UserPassword NVARCHAR(100) NOT NULL, 
+	LicenseNumber NVARCHAR(7) NOT NULL, 
+	Age INT NOT NULL CHECK (Age > 18), 
+	CreatedAT DATETIME NOT NULL DEFAULT GETDATE(),
+	RoleID INT FOREIGN KEY REFERENCES Roles(RoleID) NOT NULL, 
+)
+
+CREATE TABLE Tokens 
+(
+	TokenID UNIQUEIDENTIFIER PRIMARY KEY, 
+	UserID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Users(UserID) NOT NULL, 
+	TokenJWT NVARCHAR(500) NOT NULL, 
+	ExpiryDate DATETIME NOT NULL
+)
+
+CREATE TABLE Categories
+( 
+	CategoryID INT IDENTITY(1,1) PRIMARY KEY, 
+	CategoryName NVARCHAR(15) UNIQUE NOT NULL
+) 
+
+CREATE TABLE Cars 
+( 
+	CarID INT IDENTITY(101,1) PRIMARY KEY, 
+	CarName NVARCHAR(50) UNIQUE NOT NULL, 
+	CategoryID INT FOREIGN KEY REFERENCES Categories (CategoryID), 
+	CarType NVARCHAR(10), 
+	NumberOfPlaces INT, 
+	Rating NUMERIC(3,2) CHECK (Rating BETWEEN 0 AND 5), 
+	Price INT NOT NULL, 
+	Info NVARCHAR(500), 
+	ImagePath NVARCHAR(100) NOT NULL 
+)
+
+CREATE TABLE Extras 
+( 
+	ExtraID INT IDENTITY(1,1) PRIMARY KEY, 
+	ExtraName NVARCHAR(30) NOT NULL, 
+	Price DECIMAL(5,2) NOT NULL 
+)
+
+CREATE TABLE ShoppingCart 
+( 
+	CartItemID INT IDENTITY(1,1) PRIMARY KEY,   
+	UserID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Users(UserID) NOT NULL, 
+	CarID INT FOREIGN KEY REFERENCES Cars(CarID) NOT NULL, 
+	Quantity INT NOT NULL 
+)
+
+CREATE TABLE CartExtras 
+( 
+	CartItemID INT REFERENCES ShoppingCart (CartItemID), 
+	ExtraID INT REFERENCES Extras (ExtraID), 
+	CONSTRAINT PK_CartExtras PRIMARY KEY (CartItemID, ExtraID) 
+) 
+
+CREATE TABLE Orders 
+( 
+	OrderID INT IDENTITY(12345,1) PRIMARY KEY, 
+	OrderDate DATETIME NOT NULL, 
+	UserID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Users(UserID) NOT NULL, 
+	TotalAmount DECIMAL(10,2) NOT NULL 
+)
+
+CREATE TABLE Rentals 
+( 
+	RentalID INT IDENTITY(1,1) PRIMARY KEY, 
+	CarID INT FOREIGN KEY REFERENCES Cars(CarID) NOT NULL,
+	CountDays INT NOT NULL, 
+)
+
+CREATE TABLE OrderRentals 
+( 
+	OrderID INT REFERENCES Orders (OrderID) ON DELETE CASCADE, 
+	RentalID INT REFERENCES Rentals (RentalID) ON DELETE CASCADE, 
+	CONSTRAINT PK_OrderRentals PRIMARY KEY (OrderID, RentalID) 
+)
+
+CREATE TABLE RentalExtras 
+( 
+	RentalID INT REFERENCES Rentals (RentalID), 
+	ExtraID INT REFERENCES Extras (ExtraID), 
+	CONSTRAINT PK_RentalExtras PRIMARY KEY (RentalID, ExtraID) 
+)
+
+INSERT INTO Roles VALUES ('Admin'),('Customer'),('Manager'),('Agent')
+
+INSERT INTO Categories VALUES ('מיני'),('משפחתי'),('מיניוואן'),('מנהלים'),('מסחרי')
+
+INSERT INTO Cars VALUES ('טויוטה אייגו',1,'אוטומט',5,4.5,134,'','./assets/toyota-aygo.jpg'),
+('i10 יונדאי',1,'אוטומט',5,4.5,134,'קומפקטי ונוח','./assets/hyundai-i10.jpg'),
+('T03 ליפמוטור',1,'חשמלי',5,4,209,'','./assets/leapmotor-t03.jpg'),
+('ניסאן טידה',1,'אוטומט',4,3.5,119,'','./assets/nissan-tiida.jpg'),
+('סוזוקי אלטו',1,'אוטומט',4,3.5,119,'','./assets/suzuki-alto.jpg'),
+('C1 סיטרואן',1,'אוטומט',4,4,119,'','./assets/citroen-c1.jpg'),
+('פיאט 500',1,'אוטומט',4,3.5,119,'2 דלתות','./assets/fiat-500.jpg'),
+('פיג`ו 108',1,'אוטומט',4,3.5,119,'2 דלתות','./assets/peugeot-108.jpg'),
+('קיה פיקנטו',1,'אוטומט',5,4.5,134,'קומפקטי ונוח','./assets/kia-picanto.jpg'),
+('שברולט ספארק',1,'אוטומט',5,4,134,'','./assets/chevrolet-spark.jpg')
+
+INSERT INTO Cars VALUES ('EVEASY לימו',2,'חשמלי',5,5,329,'','./assets/eveasy-limo.jpg'),
+('MG 4',2,'חשמלי',5,5,288,'','./assets/mg4.jpg'),
+('MG 5',2,'חשמלי',5,5,329,'סטיישן','./assets/mg5.jpg'),
+('אורה פאנקי קאט',2,'חשמלי',5,5,288,'','./assets/ora-funky-cat.jpg'),
+('דולפין BYD',2,'חשמלי',5,5,288,'','./assets/byd-dolphin.jpg'),
+('טויוטה פריוס',2,'היברידי',5,5,209,'מומלץ','./assets/toyota-prius.jpg'),
+('טויוטה קורולה',2,'היברידי',5,5,209,'סטיישן','./assets/toyota-corolla.jpg'),
+('I25 יונדאי',2,'אוטומט',5,4.5,178,'','./assets/hyundai-i25.jpg'),
+('יונדאי אלנטרה',2,'אוטומט',5,4,178,'','./assets/hyundai-elantra.jpg'),
+('יונדאי סונטה',2,'אוטומט',5,4.5,209,'','./assets/hyundai-sonata.jpg'),
+('מאזדה 3',2,'אוטומט',5,5,209,'','./assets/mazda-3.jpg'),
+('`מיצובישי אטרז',2,'אוטומט',5,3.5,178,'תא מטען רחב','./assets/mitsubishi-attrage.jpg'),
+('ניסאן ג`וק',2,'אוטומט',5,4,209,'','./assets/nissan-juke.jpg'),
+('ניסאן סנטרה',2,'אוטומט',5,3.5,209,'','./assets/nissan-sentra.jpg'),
+('סיאט איביזה',2,'אוטומט',5,3.5,178,'','./assets/seat-ibiza.jpg'),
+('C4 סיטרואן',2,'אוטומט',5,4,178,'','./assets/citroen-c4.jpg'),
+('סקודה אוקטביה',2,'היברידי',5,5,209,'מומלץ','./assets/skoda-octavia.jpg'),
+('פורד פוקוס',2,'אוטומט',5,4,178,'סטיישן','./assets/ford-focus.jpg'),
+('קיה סיד',2,'אוטומט',5,4.5,209,'סטיישן','./assets/kia-ceed-sw.jpg')
+
+INSERT INTO Cars VALUES ('+ טויוטה פריוס',3,'היברידי',6,5,288,'מתאים לנסיעות משפחתיות','./assets/toyota-prius-plus.jpg'),
+('מיצובישי אאוטלנדר',3,'היברידי',7,5,329,'תא מטען רחב במיוחד','./assets/mitsubishi-outlander.jpg'),
+('סקודה קודיאק',3,'אוטומט',7,5,329,'רכב נח במיוחד','./assets/skoda-kodiaq.jpg'),
+('פיג`ו 5008',3,'אוטומט',7,4.5,329,'','./assets/peugeot-5008.jpg'),
+('טויוטה קאמרי',4,'היברידי',5,5,530,'רכב יוקרה','./assets/toyota-camry.jpg'),
+('טסלה מודל 3',4,'חשמלי',5,5,530,'','./assets/tesla-model-3.jpg'),
+('יונדאי איוניק 6',4,'חשמלי',5,5,530,'','./assets/hyundai-ioniq-6.jpg'),
+('מאזדה 6',4,'אוטומט',5,5,530,'','./assets/mazda-6.jpg'),
+('סקודה סופרב',4,'אוטומט',5,5,530,'רכב יוקרה','./assets/skoda-superb.jpg'),
+('סיטרואן ברלינגו',5,'ידני',5,5,288,'תא מטען רחב במיוחד','./assets/citroen-berlingo.jpg'),
+('פיאט דובלו',5,'ידני',5,4.5,288,'','./assets/fiat-doblo.jpg')
+
+INSERT INTO Extras VALUES ('ביטול השתתפות עצמית',139.5),('נהג נוסף',50),('(נהג צעיר (מתחת גיל 23',90),('כסא תינוק',20),('בוסטר לילד',20),('WAZE מכשיר ניווט',28)
